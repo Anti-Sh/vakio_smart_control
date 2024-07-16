@@ -17,7 +17,7 @@
                 <#LANG_TITLE#>:
                 (*)
         </label>
-        <div class="col-lg-9">
+        <div class="col-lg-6">
                 <input id="title" name="title" value="[#TITLE#]" type="text" class="form-control">
         </div>
 </div>
@@ -26,20 +26,20 @@
         <label for="vakio_device_type" class="col-lg-3 control-label">
                 Тип устройства: (*)
         </label>
-        <div class="col-lg-9">
-                <select name="vakio_device_type" id="vakio_device_type" class="form-control">
+        <div class="col-lg-6">
+                <select [#if ID!=""#]style="pointer-events: none;"[#endif ID#] name="vakio_device_type" id="vakio_device_type" class="form-control">
                         [#begin VAKIO_TYPES#]
                         <option [#if SELECTED#]selected[#endif SELECTED#] value="[#ID#]">[#TITLE#]</option>
                         [#end VAKIO_TYPES#]
                 </select>
-        </div>
+		</div>
 </div>
 <!-- VAKIO_DEVICE_MQTT_TOPIC (varchar) -->
 <div class="form-group[#if ERR_VAKIO_DEVICE_MQTT_TOPIC#] has-error[#endif#]">
  <label for="vakio_device_mqtt_topic" class="col-lg-3 control-label">
         MQTT топик: (*)
  </label>
- <div class="col-lg-9"><input id="vakio_device_mqtt_topic" name="vakio_device_mqtt_topic" value="[#VAKIO_DEVICE_MQTT_TOPIC#]" type="text" class="form-control"></div>
+ <div class="col-lg-6"><input id="vakio_device_mqtt_topic" name="vakio_device_mqtt_topic" value="[#VAKIO_DEVICE_MQTT_TOPIC#]" type="text" class="form-control"></div>
 </div>
 <div class="form-group">
         <div class="col-lg-offset-3 col-lg-4">

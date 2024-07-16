@@ -26,36 +26,35 @@ $vakio_module = new vakio();
 $vakio_module->getConfig();
 
 $tmp = SQLSelectOne("SELECT `ID` FROM `vakio_devices` LIMIT 1");
-if (!$tmp['ID'])
+if (!isset($tmp['ID']))
    exit; // no devices added -- no need to run this cycle
 
 echo date("H:i:s") . " running " . basename(__FILE__) . PHP_EOL;
 $latest_check=0;
 $checkEvery=2; // poll every 5 seconds
 
-if ($vakio_module->config["MQTT_CLIENT"]) {
-   $client_name = $mqtt->config['MQTT_CLIENT'];
+if (isset($vakio_module->config["MQTT_CLIENT"])) {
+   $client_name = $vakio_module->config['MQTT_CLIENT'];
 } else {
    $client_name = "majordomo-client-" . random_int(1, 100);
 }
 
-if ($mqtt->config['MQTT_AUTH']) {
-   $username = $mqtt->config['MQTT_USERNAME'];
-   $password = $mqtt->config['MQTT_PASSWORD'];
+if (isset($vakio_module->config['MQTT_AUTH'])) {
+   $username = $vakio_module->config['MQTT_USERNAME'];
+   $password = $vakio_module->config['MQTT_PASSWORD'];
 } else {
    $username = "";
    $password = "";
 }
 
 $host = 'localhost';
-$host = 'test.mosquitto.org';
 
-if ($mqtt->config['MQTT_HOST']) {
-   $host = $mqtt->config['MQTT_HOST'];
+if (isset($vakio_module->config['MQTT_HOST'])) {
+   $host = $vakio_module->config['MQTT_HOST'];
 }
-
-if ($mqtt->config['MQTT_PORT']) {
-   $port = $mqtt->config['MQTT_PORT'];
+print $host;
+if (isset($vakio_module->config['MQTT_PORT'])) {
+   $port = $vakio_module->config['MQTT_PORT'];
 } else {
    $port = 1883;
 }
@@ -76,7 +75,7 @@ foreach($rec as $row) {
 unset($row);
 
 $total = count($query_list);
-echo date('H:i:s') . " Topics to watch: $query_list (Total: $total)\n";
+echo date('H:i:s') . " Topics to watch: $total\n";
 
 for ($i = 0; $i < $total; $i++) {
    $path = trim($query_list[$i]) . "/#";
@@ -91,11 +90,10 @@ $previousMillis = 0;
 
 while ($mqtt_client->proc())
 {
-   $operations = checkOperationsQueue('public');
+   $operations = checkOperationsQueue('vakio');
    for ($i=0; $i<count($operations); $i++) {
       $topic = $operations[$i]["DATANAME"];
       $value = $operations[$i]["DATAVALUE"];
-      
       $mqtt_client->publish($topic, $value, 0, true);
    }
    $currentMillis = round(microtime(true) * 10000);
@@ -122,7 +120,6 @@ $mqtt_client->close();
  */
 function procmsg($topic, $msg) {
    if (!isset($topic) || !isset($msg)) return false;
-   
    $topic_parts = explode("/", $topic);
    $topic_parts_count = count($topic_parts);
    $topic_db_format = $topic_parts[0];
@@ -132,16 +129,23 @@ function procmsg($topic, $msg) {
    $endpoint = $topic_parts[$topic_parts_count - 1];
    $rec = SQLSelectOne("SELECT * FROM `vakio_devices` WHERE `VAKIO_DEVICE_MQTT_TOPIC`='$topic_db_format'");
    
-   if(!$rec['ID']) {
+   if(!isset($rec['ID'])) {
       echo date("Y-m-d H:i:s") . " Ignore received from {$topic} : $msg\n";
       return false;
    }
-   
    $state = json_decode($rec["VAKIO_DEVICE_STATE"], true);
    $state[$endpoint] = $msg;
    $rec["VAKIO_DEVICE_STATE"] = json_encode($state);
-   
    SQLUpdate("vakio_devices", $rec);
+   $info = SQLSelectOne('SELECT * FROM vakio_info WHERE DEVICE_ID="'.$rec['ID'].'" AND TITLE="'.$endpoint.'"');
+   if($info['VALUE'] != $msg){
+	include_once(DIR_MODULES . 'vakio/vakio.class.php');
+	$vakio_module = new vakio();
+	$info['VALUE'] = $msg;
+	$info['UPDATED'] = date('Y-m-d H:i:s');
+	SQLUpdate("vakio_info", $info);
+	$vakio_module->setProperty($info, $msg);
+   }
 }
 
 $db->Disconnect(); // closing database connection

@@ -18,15 +18,28 @@
   if (!$qry) $qry="1";
   $sortby_vakio_devices="ID DESC";
   $out['SORTBY']=$sortby_vakio_devices;
-  // SEARCH RESULTS
   $res=SQLSelect("SELECT * FROM vakio_devices WHERE $qry ORDER BY ".$sortby_vakio_devices);
-  if ($res[0]['ID']) {
+  // Создаём список с наименованием типов устройств
+  $devices = array(
+    0 => array(
+      "TITLE"=>"Atmosphere",
+    ),
+    1 => array(
+      "TITLE"=>"Base Smart",
+    ),
+    2 => array(
+      "TITLE"=>"Kiv Pro/New",
+    ),
+    3 => array(
+      "TITLE"=>"Openair",
+    ),
+  );
+  if (isset($res[0]['ID'])) {
    //paging($res, 100, $out); // search result paging
    $total=count($res);
    for($i=0;$i<$total;$i++) {
     // some action for every record if required
-    $tmp=explode(' ', $res[$i]['UPDATED']);
-    $res[$i]['UPDATED']=fromDBDate($tmp[0])." ".$tmp[1];
+	$res[$i]['VAKIO_DEVICE_TYPE']=$devices[$res[$i]['VAKIO_DEVICE_TYPE']]['TITLE'];
    }
    $out['RESULT']=$res;
   }
