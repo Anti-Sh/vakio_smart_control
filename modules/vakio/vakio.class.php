@@ -211,8 +211,6 @@ function usual(&$out) {
       // Формирование топика по запросу в БД (По AJAX приходит только конечная точка, топик определяется по ID устройства)
       $topic = $rec["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $topic_endpoint;
       // Добавление в очередь, которая обрабатывается в цикле
-	  debmes($topic);
-	  debmes($value);
       addToOperationsQueue('vakio', $topic, $value);
       
     }
@@ -225,7 +223,6 @@ function usual(&$out) {
 
 function api($params) {
 	$device = SQLSelectOne("SELECT * FROM vakio_devices WHERE TITLE='".$params['name']."'");
-	debmes($device);
 	$topic = $device["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $params['topic'];
     addToOperationsQueue('vakio', $topic, $params['data']);
 	return $topic;
