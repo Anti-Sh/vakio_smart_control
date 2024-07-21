@@ -274,7 +274,7 @@ function api($params) {
       //to-do
   }
    //Запись в привязанное свойство/метод
- function setProperty($device, $value, $params = []){
+  function setProperty($device, $value, $params = []){
 	if($value == 'on') $value = 1;
 	else if($value == 'off') $value = 0;
     if (isset($device['LINKED_OBJECT']) && isset($device['LINKED_PROPERTY'])) {
@@ -286,8 +286,8 @@ function api($params) {
     }
 }
 	//Запись из привязанного свойства
-function propertySetHandle($object, $property, $value) {
-  $this->getConfig();
+  function propertySetHandle($object, $property, $value) {
+   $this->getConfig();
    $table='vakio_info';
    $properties=SQLSelect("SELECT ID FROM $table WHERE LINKED_OBJECT LIKE '".DBSafe($object)."' AND LINKED_PROPERTY LIKE '".DBSafe($property)."'");
    $total=count($properties);
@@ -345,10 +345,10 @@ function propertySetHandle($object, $property, $value) {
 	 addToOperationsQueue('vakio', $topic, $com);
 	 $property['VALUE'] = $value;
 	 $property['UPDATED'] = date('Y-m-d H:i:s');
-	 SQLUpdate($table, $com);
+	 SQLUpdate($table, $property);
     }
    }
- }
+  }
 /**
 * Install
 *
@@ -371,6 +371,7 @@ function propertySetHandle($object, $property, $value) {
   for($i=0; $i<count($id); $i++){
 	$this->delete_vakio_devices($id[$i]['ID']);
   }
+  SQLExec('DROP TABLE IF EXISTS vakio_info');
   SQLExec('DROP TABLE IF EXISTS vakio_devices');
   parent::uninstall();
  }
