@@ -212,6 +212,13 @@ function usual(&$out) {
       $topic = $rec["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $topic_endpoint;
       // Добавление в очередь, которая обрабатывается в цикле
       addToOperationsQueue('vakio', $topic, $value);
+	  
+	  // Обновляем значение в таблице свойств
+	  if($value == "on") $value = 1;
+	  else if($value == "off") $value = 0;
+	  $prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='$id' AND TITLE='$topic_endpoint'");
+	  $prop['VALUE'] = $value;
+	  SQLUpdate("vakio_info", $prop);	  
       
     }
     echo json_encode($data);
@@ -225,7 +232,12 @@ function api($params) {
 	$device = SQLSelectOne("SELECT * FROM vakio_devices WHERE TITLE='".$params['name']."'");
 	$topic = $device["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $params['topic'];
     addToOperationsQueue('vakio', $topic, $params['data']);
-	return $topic;
+	// Обновляем значение в таблице свойств
+	if($params['data'] == "on") $params['data'] = 1;
+	else if($params['data'] == "off") $params['data'] = 0;
+	$prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='".$device['ID']."' AND TITLE='".$params['topic']."'");
+	$prop['VALUE'] = $params['data'];
+	SQLUpdate("vakio_info", $prop);	  	
 }
 
 /**

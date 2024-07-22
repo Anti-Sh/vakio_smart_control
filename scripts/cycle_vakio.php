@@ -52,7 +52,6 @@ $host = 'localhost';
 if (isset($vakio_module->config['MQTT_HOST'])) {
    $host = $vakio_module->config['MQTT_HOST'];
 }
-print $host;
 if (isset($vakio_module->config['MQTT_PORT'])) {
    $port = $vakio_module->config['MQTT_PORT'];
 } else {
@@ -111,9 +110,10 @@ while ($mqtt_client->proc())
 
 
 $mqtt_client->close();
+$db->Disconnect(); // closing database connection
 
 /**
- * По полученному топику определяет устройство, которому обновляет поле VAKIO_DEVICE_STATE.
+ * По полученному топику определяет устройство, которому обновляет поле VAKIO_DEVICE_STATE и привязанные свойства.
  * @param mixed $topic Topic
  * @param mixed $msg Message
  * @return void
@@ -138,14 +138,15 @@ function procmsg($topic, $msg) {
    $rec["VAKIO_DEVICE_STATE"] = json_encode($state);
    SQLUpdate("vakio_devices", $rec);
    $info = SQLSelectOne('SELECT * FROM vakio_info WHERE DEVICE_ID="'.$rec['ID'].'" AND TITLE="'.$endpoint.'"');
+   if($msg == "on") $msg = 1;
+   else if($msg == "off") $msg = 0;
    if($info['VALUE'] != $msg){
-	include_once(DIR_MODULES . 'vakio/vakio.class.php');
-	$vakio_module = new vakio();
-	$info['VALUE'] = $msg;
-	$info['UPDATED'] = date('Y-m-d H:i:s');
-	SQLUpdate("vakio_info", $info);
-	$vakio_module->setProperty($info, $msg);
+      include_once(DIR_MODULES . 'vakio/vakio.class.php');
+      $vakio_module = new vakio();
+      $info['VALUE'] = $msg;
+      $info['UPDATED'] = date('Y-m-d H:i:s');
+      SQLUpdate("vakio_info", $info);
+      $vakio_module->setProperty($info, $msg);
    }
 }
 
-$db->Disconnect(); // closing database connection
