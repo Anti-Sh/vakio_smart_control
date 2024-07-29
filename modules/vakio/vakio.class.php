@@ -213,12 +213,9 @@ function usual(&$out) {
       // Добавление в очередь, которая обрабатывается в цикле
       addToOperationsQueue('vakio', $topic, $value);
 	  
-	  // Обновляем значение в таблице свойств
-	  if($value == "on") $value = 1;
-	  else if($value == "off") $value = 0;
-	  $prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='$id' AND TITLE='$topic_endpoint'");
-	  $prop['VALUE'] = $value;
-	  SQLUpdate("vakio_info", $prop);	  
+	  // Передаем значение в привязанное свойство/метод
+	  $prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='".$rec['ID']."' AND TITLE='".$topic_endpoint."'");
+	  $this->setProperty($prop, $value);
       
     }
     echo json_encode($data);
@@ -236,8 +233,7 @@ function api($params) {
 	if($params['data'] == "on") $params['data'] = 1;
 	else if($params['data'] == "off") $params['data'] = 0;
 	$prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='".$device['ID']."' AND TITLE='".$params['topic']."'");
-	$prop['VALUE'] = $params['data'];
-	SQLUpdate("vakio_info", $prop);	  	
+	$this->setProperty($prop, $params['data']);	  	
 }
 
 /**
@@ -286,16 +282,22 @@ function api($params) {
       //to-do
   }
    //Запись в привязанное свойство/метод
-  function setProperty($device, $value, $params = []){
+  function setProperty($prop, $value, $params = []){
 	if($value == 'on') $value = 1;
 	else if($value == 'off') $value = 0;
-    if (isset($device['LINKED_OBJECT']) && isset($device['LINKED_PROPERTY'])) {
-		setGlobal($device['LINKED_OBJECT'] . '.' . $device['LINKED_PROPERTY'], $value, 0, 'vakio_module');
-    }
-	if (isset($device['LINKED_OBJECT']) && isset($device['LINKED_METHOD'])) {
-		$params['VALUE'] = $value;
-		callMethodSafe($device['LINKED_OBJECT'] . '.' . $device['LINKED_METHOD'], $params);
-    }
+	if($prop['VALUE'] != $value);{
+		// Обновляем значение в таблице свойств
+		$prop['VALUE'] = $value;
+		$prop['UPDATED'] = date('Y-m-d H:i:s');
+		SQLUpdate("vakio_info", $prop);
+		if (isset($prop['LINKED_OBJECT']) && isset($prop['LINKED_PROPERTY'])) {
+			setGlobal($prop['LINKED_OBJECT'] . '.' . $prop['LINKED_PROPERTY'], $value, array($this->name=>1), $this->name);
+		}
+		if (isset($prop['LINKED_OBJECT']) && isset($prop['LINKED_METHOD'])) {
+			$params['VALUE'] = $value;
+			callMethodSafe($prop['LINKED_OBJECT'] . '.' . $prop['LINKED_METHOD'], $params);
+		}
+	}
 }
 	//Запись из привязанного свойства
   function propertySetHandle($object, $property, $value) {

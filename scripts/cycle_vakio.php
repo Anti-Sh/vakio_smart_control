@@ -141,11 +141,7 @@ function procmsg($topic, $msg) {
    if($msg == "on") $msg = 1;
    else if($msg == "off") $msg = 0;
    if($info['VALUE'] != $msg){
-      include_once(DIR_MODULES . 'vakio/vakio.class.php');
-      $vakio_module = new vakio();
-      $info['VALUE'] = $msg;
-      $info['UPDATED'] = date('Y-m-d H:i:s');
-      SQLUpdate("vakio_info", $info);
+      global $vakio_module;
       $vakio_module->setProperty($info, $msg);
    }
 }
