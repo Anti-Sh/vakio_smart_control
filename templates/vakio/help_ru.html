@@ -1,0 +1,117 @@
+<h4>Справка</h4>
+<div class="panel-group" id="accordion" style="width:98%">
+   <div class="panel panel-info">
+      <div class="panel-heading">
+         <a data-toggle="collapse" data-parent="#accordion" href="#general_help">Общие сведения</a>
+      </div>
+      <div class="panel-body collapse" id="general_help">
+         <div style="width:98%">
+            <p>Модуль предназначен для взаимодействия с устройствами <strong>Vakio</strong> в режиме подключения к локальному MQTT-брокеру.</p>
+            <p><strong>Возможности модуля:</strong></p>
+            <ul>
+            <li>управление устройствами из модуля;</li>
+            <li>управление устройствами через привязвнные свойства/методы;</li>
+            <li>управление устройствами через API.</li>
+            </ul>
+			<p>Для взаимодействия с устройствами используется MQTT.</p>
+           	<p>В модуле имеется цикл, который принимает и публикует сведения по протоколу MQTT.</p>
+            <p>Для добавления устройства необходимо войти на прибор по его IP адресу и в <strong>Настройках mqtt</strong> переключить на <strong>Свой сервер</strong> и прописать данные для подключению к вашему брокеру. Также, надо прописать настройки подключения в <strong>Настройках самого модуля</strong>. Далее, нажмите кнопку +Добавить, придумайте название прибора, выберите тип устройства и введите топик. <strong>Топик должен быть уникальный.</strong>Например, <b>vakio/zal</b>. После нажатия кнопки Добавить в списке появится устройство и его возможные свойства.</p>
+         </div>
+      </div>
+   </div>
+   <div class="panel panel-info">
+      <div class="panel-heading">
+         <a data-toggle="collapse" data-parent="#accordion" href="#property_help">Свойства и управление прибором</a>
+      </div>
+      <div class="panel-body collapse" id="property_help">
+        <div style="width:900px">
+			<p>У устройств могут быть следующие свойства:</p>
+			<font size=5><strong>Atmosphere:</strong></font>
+			<div class="table-responsive">
+			<table class="table table-striped">
+			<tr>
+			<td><b>Свойство</br></td>
+			<td><b>Топик</br></td>
+			<td><b>Описание</br></td>
+			<td><b>Команды</br></td>
+			</tr>
+			<tr><td><strong>CO2</strong></td><td>co2</td><td>Уровень CO2</td><td>-</td></tr>
+            <tr><td><strong>Температура</strong></td><td>temp</td><td>Измеренная температура</td><td>-</td></tr>
+            <tr><td><strong>Влажность</strong></td><td>hud</td><td>Измеренная влажность</td><td>-</td></tr>
+			</table>
+			</div>
+			<font size=5><strong>Base Smart:</strong></font>
+			<div class="table-responsive">
+			<table class="table table-striped">
+			<tr>
+			<td><b>Свойство</br></td>
+			<td><b>Топик</br></td>
+			<td><b>Описание</br></td>
+			<td><b>Команды</br></td>
+			</tr>
+			<tr><td><strong>Состояние</strong></td><td>state</td><td>Состояние прибора</td><td>on,off</td></tr>
+            <tr><td><strong>Режим</strong></td><td>workmode</td><td>Режим прибора</td><td>1 или inflow - приток</br>2 или recuperator - рекуперация</br>3 или inflow_max - приток MAX</br>4 или winter - зимний режим рекуперации</br>5 или outflow - вытяжка</br>6 или outflow_max - вытяжка MAX</br>7 или night - ночной режим</td></tr>
+            <tr><td><strong>Скорость</strong></td><td>speed</td><td>Скорость вентилятора</td><td>1-7</td></tr>
+			<tr><td><strong>Управление</strong></td><td>mode</td><td>Топик управления</td><td>06000 - Выключить</br>06001 - Включить с предыдущим режимом</br>06010 - Рекуператор лето</br>06011 - Рекуператор зима</br>06021 - Приток</br>06022 - Приток максимальный режим</br>06031 - Вытяжка</br>06032 - Вытяжка максимальный режим</br>06041 - Ночной режим</br>06501-06507 - Скорость вентиляции 1-7</td></tr>
+			</table>
+			</div>
+			<font size=5><strong>Kiv Pro/New:</strong></font>
+			<div class="table-responsive">
+			<table class="table table-striped">
+			<tr>
+			<td><b>Свойство</br></td>
+			<td><b>Топик</br></td>
+			<td><b>Описание</br></td>
+			<td><b>Команды</br></td>
+			</tr>
+			<tr><td><strong>Состояние</strong></td><td>state</td><td>Состояние прибора</td><td>on,off</td></tr>
+            <tr><td><strong>Заслонка</strong></td><td>gate</td><td>Уровень заслонки</td><td>1-4</td></tr>
+			</table>
+			</div>
+			<font size=5><strong>Openair:</strong></font>
+			<div class="table-responsive">
+			<table class="table table-striped">
+			<tr>
+			<td><b>Свойство</br></td>
+			<td><b>Топик</br></td>
+			<td><b>Описание</br></td>
+			<td><b>Команды</br></td>
+            <tr><td><strong>Температура</strong></td><td>temp</td><td>Измеренная температура</td><td>-</td></tr>
+            <tr><td><strong>Влажность</strong></td><td>hud</td><td>Измеренная влажность</td><td>-</td></tr>
+			<tr><td><strong>Состояние</strong></td><td>state</td><td>Состояние прибора</td><td>on,off</td></tr>
+            <tr><td><strong>Заслонка</strong></td><td>gate</td><td>Уровень заслонки</td><td>1-4</td></tr>
+			<tr><td><strong>Скорость</strong></td><td>speed</td><td>Скорость вентилятора</td><td>1-5</td></tr>
+			</table>
+			</div>
+		</div>
+      </div>
+   </div>
+   	<div class="panel panel-info">
+      <div class="panel-heading">
+         <a data-toggle="collapse" data-parent="#accordion" href="#api_help">Обращение к устройству по API с помощью кода</a>
+      </div>
+      <div class="panel-body collapse" id="api_help">
+        <div style="width:900px">
+			<p>
+				Параметры:
+				<ul>
+				<li>name &mdash; имя прибора</li>
+				<li>topic &mdash; управляющий топик устройства из таблицы в предыдущем разделе</li>
+				<li>data &mdash; устанавливаемое значение</li>
+			</ul>
+			</p>
+			<p>Примеры:</p>
+			Отключение устройства:
+			<pre>callAPI('/api/module/vakio','GET',array('name'=>[#NAME#],'topic'=>'state','data'=>'off'));</pre>
+			Режим приток MAX
+			<pre>callAPI('/api/module/vakio','GET',array('name'=>[#NAME#],'topic'=>'workmode','data'=>'inflow_max'));</pre>
+			Скорость вентилятора 4
+			<pre>callAPI('/api/module/vakio','GET',array('name'=>[#NAME#],'topic'=>'speed','data'=>'4'));</pre>
+		</div>
+      </div>
+	</div>
+</div>
+<br>
+<div>
+   <a href="?data_source=<#DATA_SOURCE#>" class="btn btn-default"><#LANG_STRING_BACK#></a>
+</div>

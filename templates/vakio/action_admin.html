@@ -1,9 +1,27 @@
 
 <!-- table zwave_devices search -->
-<div>
- [ <a href="#" onClick="$('#api_settings').toggle();return false;"><#LANG_SETUP#></a> ]
+[#if VIEW_MODE="search_vakio_devices" || VIEW_MODE=""#]
+<div class="row">
+	<div class="col-md-4">
+		<a href="?view_mode=edit_vakio_devices&data_source=<#DATA_SOURCE#>" class="btn btn-default"><i class="glyphicon glyphicon-plus"></i><#LANG_ADD#></a>
+		&nbsp;&nbsp;
+		<!--# Кнопка 'Настройки'. #-->
+		<a class="btn btn-default" href="#api_settings" data-toggle="collapse"><i class="glyphicon glyphicon-cog"></i></a>
+		&nbsp;&nbsp;
+		<a href="?view_mode=devices" class="btn btn-info"><i class="glyphicon glyphicon-th"></i> <#LANG_DEVICES#></a>
+	</div>
+	<div class="col-md-7">
+		[#module name="xray" action="service" cycle="vakio"#]
+	</div>
+			<!--# Кнопка 'Справка'. #-->
+	<div class="col-md-1">
+		<a href="?view_mode=show_help" class="btn btn-default btn-sm float-right" title="Справка"><i class="glyphicon glyphicon-question-sign"></i></a>
+	</div>
 </div>
-<div style="display:none" id='api_settings'>
+[#else#]
+<a href="?view_mode=show_help" class="btn btn-default btn-sm float-right" title="Справка"><i class="glyphicon glyphicon-question-sign"></i></a>
+[#endif VIEW_MODE#]
+<div class="collapse" id='api_settings'>
 &nbsp;
 <form action="?" method="post" enctype="multipart/form-data" name="frmEdit" class="form-horizontal">
   <fieldset>
@@ -79,9 +97,29 @@
   [#inc vakio_devices_search_admin.html#]
  [#endif VIEW_MODE#]
  <!-- / table vakio_devices search -->
+   <!--# Справка по модулю. #-->
+[#if VIEW_MODE="show_help"#]
+   [#inc ./help_ru.html#] 
+[#endif#]
  <!-- table vakio_devices edit -->
  [#if VIEW_MODE="edit_vakio_devices"#]
-   [#inc vakio_devices_edit.html#]
+   [#if ID!=""#]
+   [#if TITLE!=""#]<h4>[#TITLE#]</h4>[#endif TITLE#]
+<ul class="nav nav-tabs">
+  <li[#if TAB=""#] class="active"[#endif#]>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab="><#LANG_GENERAL#></a>
+  </li>
+  <li[#if TAB="data"#] class="active"[#endif#]>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=data">Свойства</a>
+</ul>
+&nbsp;<br/>
+   [#endif ID#]
+   [#if TAB=""#]
+    [#inc vakio_devices_edit.html#]
+   [#endif TAB#]
+   [#if TAB="data"#]
+    [#inc vakio_devices_edit_data.html#]
+   [#endif TAB#]
  [#endif VIEW_MODE#]
  <!-- / table vakio_devices edit -->
  <!-- table devices -->

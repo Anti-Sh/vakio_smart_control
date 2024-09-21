@@ -134,12 +134,12 @@ function admin(&$out) {
 
  
   if ($this->view_mode=='update_settings') {
-    global $mqtt_client;
-    global $mqtt_host;
-    global $mqtt_username;
-    global $mqtt_password;
-    global $mqtt_port;
-    global $mqtt_auth;
+    $mqtt_client = gr('mqtt_client');
+    $mqtt_host = gr('mqtt_host');;
+    $mqtt_username = gr('mqtt_username');;
+    $mqtt_password = gr('mqtt_password');;
+    $mqtt_port = gr('mqtt_port');;
+    $mqtt_auth = gr('mqtt_auth');;
 
     $this->config['MQTT_CLIENT'] = trim($mqtt_client);
     $this->config['MQTT_HOST'] = trim($mqtt_host);
@@ -150,7 +150,7 @@ function admin(&$out) {
 
     $this->saveConfig();
 
-    setGlobal('cycle_vakio', 'restart');
+    setGlobal('cycle_vakioControl', 'restart');
 
     $this->redirect("?");
   }
@@ -206,12 +206,16 @@ function usual(&$out) {
       if (!isset($topic_endpoint) || !isset($value) || !isset($id)) {
         return;
       }
-
+	
       $rec=SQLSelectOne("SELECT * FROM vakio_devices WHERE ID='$id'");
       // Формирование топика по запросу в БД (По AJAX приходит только конечная точка, топик определяется по ID устройства)
       $topic = $rec["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $topic_endpoint;
       // Добавление в очередь, которая обрабатывается в цикле
-      addToOperationsQueue('public', $topic, $value);
+      addToOperationsQueue('vakio', $topic, $value);
+	  
+	  // Передаем значение в привязанное свойство/метод
+	  $prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='".$rec['ID']."' AND TITLE='".$topic_endpoint."'");
+	  $this->setProperty($prop, $value);
       
     }
     echo json_encode($data);
@@ -220,6 +224,18 @@ function usual(&$out) {
 
   $this->admin($out);
 }
+
+function api($params) {
+	$device = SQLSelectOne("SELECT * FROM vakio_devices WHERE TITLE='".$params['name']."'");
+	$topic = $device["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $params['topic'];
+    addToOperationsQueue('vakio', $topic, $params['data']);
+	// Обновляем значение в таблице свойств
+	if($params['data'] == "on") $params['data'] = 1;
+	else if($params['data'] == "off") $params['data'] = 0;
+	$prop=SQLSelectOne("SELECT * FROM vakio_info WHERE DEVICE_ID='".$device['ID']."' AND TITLE='".$params['topic']."'");
+	$this->setProperty($prop, $params['data']);	  	
+}
+
 /**
 * vakio_devices search
 *
@@ -253,10 +269,99 @@ function usual(&$out) {
     $rec=SQLSelectOne("SELECT * FROM vakio_devices WHERE ID='$id'");
     // some action for related tables
     SQLExec("DELETE FROM vakio_devices WHERE ID='".$rec['ID']."'");
+	$properties=SQLSelect("SELECT * FROM vakio_info WHERE DEVICE_ID='".$rec['ID']."' AND LINKED_OBJECT != '' AND LINKED_PROPERTY != ''");
+    foreach($properties as $prop) {
+		removeLinkedProperty($prop['LINKED_OBJECT'], $prop['LINKED_PROPERTY'], $this->name);
+	}
+	SQLExec("DELETE FROM vakio_info WHERE DEVICE_ID='".$rec['ID']."'");
   }
+  
+  
   function processCycle() {
     $this->getConfig();
       //to-do
+  }
+   //Запись в привязанное свойство/метод
+  function setProperty($prop, $value, $params = []){
+	if($value == 'on') $value = 1;
+	else if($value == 'off') $value = 0;
+	if($prop['VALUE'] != $value);{
+		// Обновляем значение в таблице свойств
+		$prop['VALUE'] = $value;
+		$prop['UPDATED'] = date('Y-m-d H:i:s');
+		SQLUpdate("vakio_info", $prop);
+		if (isset($prop['LINKED_OBJECT']) && isset($prop['LINKED_PROPERTY'])) {
+			setGlobal($prop['LINKED_OBJECT'] . '.' . $prop['LINKED_PROPERTY'], $value, array($this->name=>1), $this->name);
+		}
+		if (isset($prop['LINKED_OBJECT']) && isset($prop['LINKED_METHOD'])) {
+			$params['VALUE'] = $value;
+			callMethodSafe($prop['LINKED_OBJECT'] . '.' . $prop['LINKED_METHOD'], $params);
+		}
+	}
+}
+	//Запись из привязанного свойства
+  function propertySetHandle($object, $property, $value) {
+   $this->getConfig();
+   $table='vakio_info';
+   $properties=SQLSelect("SELECT ID FROM $table WHERE LINKED_OBJECT LIKE '".DBSafe($object)."' AND LINKED_PROPERTY LIKE '".DBSafe($property)."'");
+   $total=count($properties);
+   if ($total) {
+    for($i=0;$i<$total;$i++) {
+     $property = SQLSelectOne("SELECT * FROM $table WHERE ID='".(int)$properties[$i]['ID']."'");
+	 $device = SQLSelectOne("SELECT * FROM vakio_devices WHERE ID='".(int)$property['DEVICE_ID']."'");
+	 if($device['VAKIO_DEVICE_TYPE'] == 0) return;
+	 else if($device['VAKIO_DEVICE_TYPE'] == 1){
+		if($property['TITLE'] == "state"){
+			if($value == "0" or $value == "off") $com = "off";
+			else if($value == "1" or $value == "on") $com = "on";
+		}else if($property['TITLE'] == "workmode"){
+			if($value == 1) $com = "inflow";
+			else if($value == 2) $com = "recuperator";
+			else if($value == 3) $com = "inflow_max";
+			else if($value == 4) $com = "winter";
+			else if($value == 5) $com = "outflow";
+			else if($value == 6) $com = "outflow_max";
+			else if($value == 7) $com = "night";
+			else $com = $value;
+		}else if($property['TITLE'] == "speed"){
+			if($value > 7) $value = 7;
+			$com = $value;
+		}else if($property['TITLE'] == "mode"){
+			$com = $value;
+		}
+	 } else if($device['VAKIO_DEVICE_TYPE'] == 2){
+		if($property['TITLE'] == "state"){
+			if($value == "0" or $value == "off") $com = "off";
+			else if($value == "1" or $value == "on") $com = "on";
+		}else if($property['TITLE'] == "gate"){
+			if($value > 4) $value = 4;
+			$com = $value;
+		}
+	 } else if($device['VAKIO_DEVICE_TYPE'] == 3){
+		 if($property['TITLE'] == "state"){
+			if($value == "0" or $value == "off") $com = "off";
+			else if($value == "1" or $value == "on") $com = "on";
+		}else if($property['TITLE'] == "gate"){
+			if($value > 4) $value = 4;
+			$com = $value;
+		}else if($property['TITLE'] == "speed"){
+			if($value > 5) $value = 5;
+			$com = $value;
+		}else if($property['TITLE'] == "workmode"){
+			if($value == 1) $com = "super_auto";
+			else if($value == 2) $com = "manual";
+			else $com = $value;
+		}else if($property['TITLE'] == "temp" or $property['TITLE'] == "hud"){
+			return;
+		}
+	 }
+	 $topic = $device["VAKIO_DEVICE_MQTT_TOPIC"] . "/" . $property['TITLE'];
+	 addToOperationsQueue('vakio', $topic, $com);
+	 $property['VALUE'] = $value;
+	 $property['UPDATED'] = date('Y-m-d H:i:s');
+	 SQLUpdate($table, $property);
+    }
+   }
   }
 /**
 * Install
@@ -276,9 +381,16 @@ function usual(&$out) {
 * @access public
 */
  function uninstall() {
+  $id = SQLSelect('SELECT ID FROM vakio_devices');
+  for($i=0; $i<count($id); $i++){
+	$this->delete_vakio_devices($id[$i]['ID']);
+  }
+  SQLExec('DROP TABLE IF EXISTS vakio_info');
   SQLExec('DROP TABLE IF EXISTS vakio_devices');
   parent::uninstall();
  }
+ 
+ 
 /**
 * dbInstall
 *
@@ -296,6 +408,15 @@ vakio_devices -
  vakio_devices: VAKIO_DEVICE_TYPE int(10) NOT NULL DEFAULT 0
  vakio_devices: VAKIO_DEVICE_MQTT_TOPIC varchar(255) NOT NULL DEFAULT ''
  vakio_devices: VAKIO_DEVICE_STATE varchar(255) NOT NULL DEFAULT ''
+ vakio_info: ID int(10) unsigned NOT NULL auto_increment
+ vakio_info: DEVICE_ID int(10) NOT NULL DEFAULT '0'
+ vakio_info: TITLE varchar(100) NOT NULL DEFAULT ''
+ vakio_info: NAME varchar(255) NOT NULL DEFAULT ''
+ vakio_info: VALUE varchar(20) NOT NULL DEFAULT ''
+ vakio_info: LINKED_OBJECT varchar(100) NOT NULL DEFAULT ''
+ vakio_info: LINKED_PROPERTY varchar(100) NOT NULL DEFAULT ''
+ vakio_info: LINKED_METHOD varchar(100) NOT NULL DEFAULT ''
+ vakio_info: UPDATED datetime
 EOD;
   parent::dbInstall($data);
  }
